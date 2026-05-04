@@ -280,6 +280,81 @@ body {
 .my-history-amt.paid { color: var(--green); }
 .my-empty { padding: 32px; text-align: center; color: var(--muted); font-size: 14px; }
 
+/* ── RECORDS PAGE ── */
+.rec-filter-bar {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.rec-filter-bar select {
+  flex: 1; min-width: 0; padding: 10px 12px;
+  border: 2px solid var(--border); border-radius: 10px;
+  font-size: 13px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif;
+  background: var(--card-bg); color: var(--ink); outline: none;
+  -webkit-appearance: none; appearance: none;
+}
+.rec-filter-bar select:focus { border-color: var(--accent2); }
+.rec-refresh-btn {
+  padding: 10px 14px; background: var(--ink); color: var(--gold);
+  border: none; border-radius: 10px; font-size: 16px; cursor: pointer;
+  flex-shrink: 0;
+}
+.rec-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;
+}
+.rec-stat-card {
+  background: var(--card-bg); border: 2px solid var(--border);
+  border-radius: 12px; padding: 12px 8px; text-align: center;
+}
+.rec-stat-label { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+.rec-stat-val { font-size: 20px; font-weight: 900; font-family: 'DM Mono', monospace; color: var(--ink); }
+.rec-stat-val.red { color: var(--accent); }
+.rec-stat-val.green { color: var(--green); }
+
+.rec-timeline { position: relative; padding-left: 20px; }
+.rec-timeline::before {
+  content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
+  width: 2px; background: var(--border);
+}
+.rec-day-group { margin-bottom: 20px; }
+.rec-day-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--muted);
+  margin-bottom: 10px; position: relative;
+  background: var(--paper); display: inline-block; padding-right: 8px;
+}
+.rec-entry {
+  background: var(--card-bg); border: 2px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  position: relative;
+}
+.rec-entry::before {
+  content: ''; position: absolute; left: -17px; top: 16px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--paper);
+}
+.rec-entry.settle::before { background: var(--green); }
+.rec-entry-top {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.rec-entry-person {
+  font-size: 13px; font-weight: 900; color: var(--ink);
+}
+.rec-entry-amt {
+  font-family: 'DM Mono', monospace; font-weight: 900; font-size: 16px;
+  color: var(--accent); white-space: nowrap;
+}
+.rec-entry-amt.settle { color: var(--green); }
+.rec-entry-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 4px;
+}
+.rec-entry-item { font-size: 13px; color: var(--muted); }
+.rec-entry-time { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.rec-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  background: #fce4ec; color: var(--accent); margin-left: 6px;
+}
+.rec-badge.settle { background: #e8f4e8; color: var(--green); }
+
 /* ── TOAST ── */
 .toast {
   position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(60px);
@@ -340,9 +415,10 @@ body {
 </div>
 
 <div class="tab-nav">
-  <button class="tab-btn active" onclick="switchTab('add')">＋ 新增記帳</button>
-  <button class="tab-btn" onclick="switchTab('overview')">📊 總覽結算</button>
-  <button class="tab-btn" onclick="switchTab('my')">👤 我的欠款</button>
+  <button class="tab-btn active" onclick="switchTab('add')">＋ 新增</button>
+  <button class="tab-btn" onclick="switchTab('overview')">📊 結算</button>
+  <button class="tab-btn" onclick="switchTab('records')">📋 紀錄</button>
+  <button class="tab-btn" onclick="switchTab('my')">👤 我的</button>
 </div>
 
 <!-- ══ PAGE: ADD ══ -->
@@ -410,6 +486,41 @@ body {
   </div>
 </div>
 
+<!-- ══ PAGE: RECORDS ══ -->
+<div class="page" id="page-records">
+
+  <div class="rec-filter-bar">
+    <select id="rec-filter-person" onchange="applyFilter()">
+      <option value="">所有人</option>
+    </select>
+    <select id="rec-filter-type" onchange="applyFilter()">
+      <option value="">所有類型</option>
+      <option value="expense">消費</option>
+      <option value="settle">還款</option>
+    </select>
+    <button class="rec-refresh-btn" onclick="loadRecords()" title="重新整理">↻</button>
+  </div>
+
+  <div class="rec-stats">
+    <div class="rec-stat-card">
+      <div class="rec-stat-label">總筆數</div>
+      <div class="rec-stat-val" id="stat-count">—</div>
+    </div>
+    <div class="rec-stat-card">
+      <div class="rec-stat-label">總消費</div>
+      <div class="rec-stat-val red" id="stat-expense">—</div>
+    </div>
+    <div class="rec-stat-card">
+      <div class="rec-stat-label">總還款</div>
+      <div class="rec-stat-val green" id="stat-settle">—</div>
+    </div>
+  </div>
+
+  <div id="rec-content">
+    <div class="loading"><div class="spinner"></div><br>載入中…</div>
+  </div>
+</div>
+
 <!-- ══ MODAL ══ -->
 <div class="modal-overlay" id="modal">
   <div class="modal-box">
@@ -466,16 +577,26 @@ function init() {
     opt.textContent = m.avatar + " " + m.name;
     sel.appendChild(opt);
   });
+
+  // 填充「紀錄」篩選選單
+  const recSel = document.getElementById("rec-filter-person");
+  MEMBERS.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m.name;
+    opt.textContent = m.avatar + " " + m.name;
+    recSel.appendChild(opt);
+  });
 }
 
 // ── Tab 切換 ──
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const tabs = ['add','overview','my'];
+  const tabs = ['add','overview','records','my'];
   document.querySelectorAll('.tab-btn')[tabs.indexOf(tab)].classList.add('active');
   document.getElementById('page-' + tab).classList.add('active');
   if (tab === 'overview') loadOverview();
+  if (tab === 'records') loadRecords();
 }
 
 // ── 渲染成員 ──
@@ -650,6 +771,92 @@ async function settle(name, balance) {
     if (data.status === "success") { showToast("✓ 結算成功"); loadOverview(); }
     else showToast("❌ " + data.message);
   } catch(e) { showToast("❌ 網路錯誤"); }
+}
+
+// ── 紀錄頁 ──
+let allRecords = [];
+
+async function loadRecords() {
+  document.getElementById("rec-content").innerHTML =
+    '<div class="loading"><div class="spinner"></div><br>載入中…</div>';
+  document.getElementById("stat-count").textContent = "—";
+  document.getElementById("stat-expense").textContent = "—";
+  document.getElementById("stat-settle").textContent = "—";
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=records&token=${TOKEN}`);
+    const data = await res.json();
+    if (data.status !== "success") throw new Error(data.message);
+    allRecords = data.records;
+    applyFilter();
+  } catch(e) {
+    document.getElementById("rec-content").innerHTML =
+      '<div class="loading">⚠ 載入失敗，請稍後重試</div>';
+  }
+}
+
+function applyFilter() {
+  const person = document.getElementById("rec-filter-person").value;
+  const type   = document.getElementById("rec-filter-type").value;
+
+  let filtered = allRecords.filter(r => {
+    if (person && r.person !== person) return false;
+    if (type   && r.type   !== type)   return false;
+    return true;
+  });
+
+  // 統計
+  const totalExpense = filtered.filter(r => r.type === "expense").reduce((s,r) => s + r.amount, 0);
+  const totalSettle  = filtered.filter(r => r.type === "settle" ).reduce((s,r) => s + r.amount, 0);
+  document.getElementById("stat-count").textContent   = filtered.length;
+  document.getElementById("stat-expense").textContent = "$" + totalExpense;
+  document.getElementById("stat-settle").textContent  = "$" + totalSettle;
+
+  if (filtered.length === 0) {
+    document.getElementById("rec-content").innerHTML =
+      '<div class="my-empty">📭 沒有符合的紀錄</div>';
+    return;
+  }
+
+  // 依日期分組
+  const groups = {};
+  filtered.forEach(r => {
+    const day = r.date.split(" ")[0]; // 取 "2024/05/01" 部分
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(r);
+  });
+
+  const html = Object.keys(groups).sort((a,b) => b.localeCompare(a)).map(day => {
+    const entries = groups[day].map(r => {
+      const avatar = MEMBERS.find(m => m.name === r.person)?.avatar || "👤";
+      const time   = r.date.split(" ")[1] || "";
+      const isSettle = r.type === "settle";
+      const noteStr  = r.note ? ` · ${r.note}` : "";
+      return `
+        <div class="rec-entry ${isSettle ? 'settle' : ''}">
+          <div class="rec-entry-top">
+            <span class="rec-entry-person">
+              ${avatar} ${r.person}
+              <span class="rec-badge ${isSettle ? 'settle' : ''}">${isSettle ? '還款' : '消費'}</span>
+            </span>
+            <span class="rec-entry-amt ${isSettle ? 'settle' : ''}">
+              ${isSettle ? '-' : '+'}$${r.amount}
+            </span>
+          </div>
+          <div class="rec-entry-bottom">
+            <span class="rec-entry-item">${r.item}${noteStr}</span>
+            <span class="rec-entry-time">${time}</span>
+          </div>
+        </div>`;
+    }).join("");
+    return `
+      <div class="rec-day-group">
+        <div class="rec-day-label">${day}</div>
+        ${entries}
+      </div>`;
+  }).join("");
+
+  document.getElementById("rec-content").innerHTML =
+    `<div class="rec-timeline">${html}</div>`;
 }
 
 // ── 我的欠款 ──
