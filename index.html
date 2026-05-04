@@ -697,11 +697,12 @@ async function submitAll() {
   const btn = document.getElementById("submit-btn");
   btn.disabled = true; btn.textContent = "⏳ 送出中…";
   try {
-    const res = await fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "addBatch", token: TOKEN, items: cart })
+    const params = new URLSearchParams({
+      action: "addBatch",
+      token: TOKEN,
+      items: JSON.stringify(cart)
     });
+    const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
     const data = await res.json();
     if (data.status === "success") {
       showModal(cart);
@@ -762,11 +763,13 @@ async function settle(name, balance) {
     if (!confirm(`確定 ${name} 已還款 $${balance}？`)) return;
   }
   try {
-    const res = await fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "settle", token: TOKEN, name, balance })
+    const params = new URLSearchParams({
+      action: "settle",
+      token: TOKEN,
+      name,
+      balance
     });
+    const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
     const data = await res.json();
     if (data.status === "success") { showToast("✓ 結算成功"); loadOverview(); }
     else showToast("❌ " + data.message);
