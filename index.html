@@ -702,8 +702,13 @@ async function submitAll() {
       token: TOKEN,
       items: JSON.stringify(cart)
     });
-    const res = await fetch(`${SCRIPT_URL}?${params.toString()}`);
-    const data = await res.json();
+    const url = `${SCRIPT_URL}?${params.toString()}`;
+    console.log("送出網址：", url); // debug
+    const res = await fetch(url);
+    console.log("HTTP狀態：", res.status, res.redirected, res.url); // debug
+    const text = await res.text();
+    console.log("回傳內容：", text); // debug
+    const data = JSON.parse(text);
     if (data.status === "success") {
       showModal(cart);
       cart = [];
@@ -712,7 +717,8 @@ async function submitAll() {
       showToast("❌ 失敗：" + (data.message || "未知錯誤"));
     }
   } catch(e) {
-    showToast("❌ 網路錯誤，請重試");
+    console.error("錯誤詳情：", e); // debug
+    showToast("❌ 錯誤：" + e.message);
   }
   btn.disabled = false; btn.textContent = "✅ 全部送出記帳";
 }
