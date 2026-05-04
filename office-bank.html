@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>辦公室代買記帳系統</title>
+
+<!-- PWA 設定 -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="代買記帳">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a2e;
+  --paper: #f5f0e8;
+  --accent: #e63946;
+  --accent2: #457b9d;
+  --green: #2d6a4f;
+  --gold: #e9c46a;
+  --muted: #8a8070;
+  --card-bg: #fffef9;
+  --border: #d4cfc4;
+  --shadow: 0 2px 12px rgba(26,26,46,0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 18px 20px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 3px solid var(--accent);
+}
+.header-title { font-size: 18px; font-weight: 900; letter-spacing: 2px; }
+.header-sub { font-size: 11px; color: var(--gold); font-family: 'DM Mono', monospace; letter-spacing: 1px; }
+
+/* ── TAB NAV ── */
+.tab-nav {
+  display: flex;
+  background: var(--ink);
+  border-bottom: 2px solid var(--border);
+}
+.tab-btn {
+  flex: 1; padding: 12px 4px; background: none; border: none;
+  color: var(--muted); font-size: 13px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif;
+  letter-spacing: 1px; cursor: pointer; transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* ── PAGES ── */
+.page { display: none; padding: 16px; max-width: 480px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* ── SECTION LABEL ── */
+.sec-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  color: var(--muted); text-transform: uppercase;
+  margin: 18px 0 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── PERSON GRID ── */
+.person-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+  margin-bottom: 4px;
+}
+.person-btn {
+  background: var(--card-bg); border: 2px solid var(--border);
+  border-radius: 10px; padding: 10px 2px;
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+  line-height: 1.3;
+}
+.person-btn .avatar { font-size: 20px; display: block; margin-bottom: 2px; }
+.person-btn:active { transform: scale(0.95); }
+.person-btn.selected {
+  background: var(--ink); color: var(--gold);
+  border-color: var(--ink);
+}
+
+/* ── ITEM GRID ── */
+.item-grid {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px;
+}
+.item-btn {
+  background: var(--card-bg); border: 2px solid var(--border);
+  border-radius: 20px; padding: 8px 16px;
+  font-size: 14px; font-weight: 700; color: var(--ink);
+  font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer; transition: all 0.15s;
+}
+.item-btn:active { transform: scale(0.95); }
+.item-btn.selected {
+  background: var(--accent2); color: white; border-color: var(--accent2);
+}
+.item-btn.custom-item { background: #e8f4e8; border-color: var(--green); color: var(--green); }
+.item-btn.custom-item.selected { background: var(--green); color: white; border-color: var(--green); }
+
+/* ── CUSTOM ITEM ROW ── */
+.custom-item-row {
+  display: flex; gap: 8px; margin-top: 8px;
+}
+.custom-item-row input {
+  flex: 1; padding: 10px 14px; border: 2px solid var(--border);
+  border-radius: 10px; font-size: 14px; font-family: 'Noto Sans TC', sans-serif;
+  background: var(--card-bg); color: var(--ink); outline: none;
+}
+.custom-item-row input:focus { border-color: var(--accent2); }
+.btn-add-item {
+  padding: 10px 16px; background: var(--green); color: white;
+  border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer;
+}
+
+/* ── AMOUNT ROW ── */
+.amount-row {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 4px;
+}
+.amount-input {
+  flex: 1; padding: 14px; border: 2px solid var(--border);
+  border-radius: 12px; font-size: 28px; font-weight: 900;
+  font-family: 'DM Mono', monospace; text-align: center;
+  background: var(--card-bg); color: var(--ink); outline: none;
+}
+.amount-input:focus { border-color: var(--accent); }
+.quick-amts { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.q-btn {
+  padding: 7px 12px; background: var(--card-bg); border: 2px solid var(--border);
+  border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--accent2);
+  font-family: 'DM Mono', monospace; cursor: pointer;
+}
+.q-btn:active { background: var(--accent2); color: white; border-color: var(--accent2); }
+
+/* ── NOTE ── */
+.note-input {
+  width: 100%; padding: 12px 14px; border: 2px solid var(--border);
+  border-radius: 12px; font-size: 14px; font-family: 'Noto Sans TC', sans-serif;
+  background: var(--card-bg); color: var(--ink); outline: none; resize: none;
+}
+.note-input:focus { border-color: var(--accent2); }
+
+/* ── SUBMIT BTN ── */
+.submit-btn {
+  display: block; width: 100%; margin-top: 20px;
+  padding: 18px; background: var(--accent); color: white;
+  border: none; border-radius: 14px; font-size: 18px; font-weight: 900;
+  font-family: 'Noto Sans TC', sans-serif; letter-spacing: 2px;
+  cursor: pointer; box-shadow: 0 4px 0 #a31f2b; transition: all 0.15s;
+}
+.submit-btn:active { transform: translateY(3px); box-shadow: none; }
+.submit-btn:disabled { background: var(--muted); box-shadow: none; cursor: not-allowed; }
+
+/* ── CART ── */
+.cart-box {
+  background: var(--card-bg); border: 2px solid var(--border);
+  border-radius: 14px; overflow: hidden; margin-top: 4px;
+}
+.cart-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.cart-item:last-child { border-bottom: none; }
+.cart-item-name { font-weight: 700; }
+.cart-item-person { color: var(--muted); font-size: 12px; }
+.cart-item-amt {
+  font-family: 'DM Mono', monospace; font-weight: 700;
+  color: var(--accent); font-size: 15px;
+}
+.cart-item-del {
+  background: none; border: none; color: var(--muted);
+  font-size: 18px; cursor: pointer; padding: 0 4px;
+}
+.cart-empty { padding: 24px; text-align: center; color: var(--muted); font-size: 14px; }
+.cart-total {
+  background: var(--ink); color: var(--gold); padding: 14px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 900; font-size: 16px;
+}
+.cart-total-amt { font-family: 'DM Mono', monospace; font-size: 22px; }
+
+.btn-clear-cart {
+  display: block; width: 100%; margin-top: 8px;
+  padding: 12px; background: var(--card-bg); color: var(--muted);
+  border: 2px solid var(--border); border-radius: 10px;
+  font-size: 13px; font-weight: 700; font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer;
+}
+
+/* ── OVERVIEW PAGE ── */
+.overview-card {
+  background: var(--card-bg); border: 2px solid var(--border);
+  border-radius: 14px; overflow: hidden; margin-bottom: 12px;
+}
+.overview-card-header {
+  background: var(--ink); color: var(--paper);
+  padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+}
+.overview-name { font-weight: 900; font-size: 16px; }
+.overview-total {
+  font-family: 'DM Mono', monospace; font-weight: 700; font-size: 18px;
+  color: var(--gold);
+}
+.overview-total.settled { color: #6fcf97; }
+.overview-detail { padding: 12px 16px; }
+.overview-row {
+  display: flex; justify-content: space-between;
+  font-size: 13px; padding: 5px 0; border-bottom: 1px dashed var(--border);
+}
+.overview-row:last-child { border-bottom: none; }
+.overview-row-item { color: var(--muted); }
+.overview-row-amt { font-family: 'DM Mono', monospace; font-weight: 700; color: var(--accent); }
+.overview-row-amt.paid { color: var(--green); }
+.settle-btn {
+  display: block; width: 100%; margin-top: 10px;
+  padding: 10px; background: var(--green); color: white;
+  border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer;
+}
+.settle-btn.unsettled { background: #e8f4e8; color: var(--green); border: 2px solid var(--green); }
+
+/* ── MY PAGE ── */
+.my-select-wrap { margin-bottom: 16px; }
+.my-select {
+  width: 100%; padding: 14px; border: 2px solid var(--border);
+  border-radius: 12px; font-size: 16px; font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--card-bg); color: var(--ink); outline: none;
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8070' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+.my-summary {
+  background: var(--ink); color: var(--paper);
+  border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 16px;
+}
+.my-name-disp { font-size: 13px; color: var(--gold); letter-spacing: 2px; margin-bottom: 6px; }
+.my-amt-disp { font-size: 48px; font-weight: 900; font-family: 'DM Mono', monospace; color: var(--accent); line-height: 1; }
+.my-amt-disp.settled { color: #6fcf97; }
+.my-amt-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.my-history { background: var(--card-bg); border: 2px solid var(--border); border-radius: 14px; overflow: hidden; }
+.my-history-row {
+  display: flex; padding: 12px 16px; border-bottom: 1px solid var(--border);
+  align-items: center; gap: 12px;
+}
+.my-history-row:last-child { border-bottom: none; }
+.my-history-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+.my-history-dot.paid { background: var(--green); }
+.my-history-info { flex: 1; }
+.my-history-item { font-size: 14px; font-weight: 700; }
+.my-history-date { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.my-history-amt { font-family: 'DM Mono', monospace; font-weight: 700; font-size: 15px; color: var(--accent); }
+.my-history-amt.paid { color: var(--green); }
+.my-empty { padding: 32px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(60px);
+  background: var(--ink); color: var(--gold); padding: 14px 24px;
+  border-radius: 30px; font-size: 14px; font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 9999;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+  opacity: 0; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(26,26,46,0.85); z-index: 9000;
+  justify-content: center; align-items: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--paper); border-radius: 20px;
+  padding: 28px; width: 100%; max-width: 360px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+}
+.modal-title { font-size: 20px; font-weight: 900; margin-bottom: 16px; text-align: center; }
+.modal-receipt { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.modal-line {
+  display: flex; justify-content: space-between;
+  font-size: 14px; padding: 6px 0; border-bottom: 1px dashed var(--border);
+}
+.modal-line:last-child { border-bottom: none; }
+.modal-line-label { color: var(--muted); }
+.modal-line-val { font-weight: 700; font-family: 'DM Mono', monospace; }
+.modal-total { font-size: 18px; font-weight: 900; text-align: center; padding-top: 10px; color: var(--accent); }
+.modal-ok {
+  display: block; width: 100%; padding: 16px;
+  background: var(--accent); color: white; border: none;
+  border-radius: 12px; font-size: 16px; font-weight: 900;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer;
+}
+
+/* ── LOADING ── */
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+.spinner {
+  display: inline-block; width: 32px; height: 32px;
+  border: 3px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">🧾 代買記帳系統</div>
+    <div class="header-sub">OFFICE EXPENSE TRACKER</div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('add')">＋ 新增記帳</button>
+  <button class="tab-btn" onclick="switchTab('overview')">📊 總覽結算</button>
+  <button class="tab-btn" onclick="switchTab('my')">👤 我的欠款</button>
+</div>
+
+<!-- ══ PAGE: ADD ══ -->
+<div class="page active" id="page-add">
+
+  <div class="sec-label">選擇購買人</div>
+  <div class="person-grid" id="person-grid"></div>
+
+  <div class="sec-label">選擇品項</div>
+  <div class="item-grid" id="item-grid"></div>
+  <div class="custom-item-row">
+    <input type="text" id="custom-item-input" placeholder="自訂品項名稱…" maxlength="20">
+    <button class="btn-add-item" onclick="addCustomItem()">＋ 新增</button>
+  </div>
+
+  <div class="sec-label">金額</div>
+  <div class="amount-row">
+    <input type="number" id="amount-input" class="amount-input" value="" placeholder="0" min="0">
+  </div>
+  <div class="quick-amts">
+    <button class="q-btn" onclick="setAmt(10)">10</button>
+    <button class="q-btn" onclick="setAmt(20)">20</button>
+    <button class="q-btn" onclick="setAmt(30)">30</button>
+    <button class="q-btn" onclick="setAmt(50)">50</button>
+    <button class="q-btn" onclick="setAmt(80)">80</button>
+    <button class="q-btn" onclick="setAmt(100)">100</button>
+    <button class="q-btn" onclick="setAmt(150)">150</button>
+    <button class="q-btn" onclick="setAmt(200)">200</button>
+  </div>
+
+  <div class="sec-label">備註（選填）</div>
+  <textarea id="note-input" class="note-input" rows="2" placeholder="如：大杯去冰、加拿鐵…"></textarea>
+
+  <button class="submit-btn" id="add-to-cart-btn" onclick="addToCart()">加入購物車</button>
+
+  <div class="sec-label">本次購物車</div>
+  <div class="cart-box">
+    <div id="cart-list"></div>
+    <div class="cart-total">
+      <span>本次合計</span>
+      <span class="cart-total-amt" id="cart-total">$0</span>
+    </div>
+  </div>
+  <button class="btn-clear-cart" onclick="clearCart()">🗑 清空購物車</button>
+  <button class="submit-btn" id="submit-btn" onclick="submitAll()" style="background:#1a1a2e; box-shadow: 0 4px 0 #000;">✅ 全部送出記帳</button>
+</div>
+
+<!-- ══ PAGE: OVERVIEW ══ -->
+<div class="page" id="page-overview">
+  <div id="overview-content">
+    <div class="loading"><div class="spinner"></div><br>載入中…</div>
+  </div>
+</div>
+
+<!-- ══ PAGE: MY ══ -->
+<div class="page" id="page-my">
+  <div class="sec-label">選擇我是誰</div>
+  <div class="my-select-wrap">
+    <select class="my-select" id="my-select" onchange="loadMyData()">
+      <option value="">請選擇姓名…</option>
+    </select>
+  </div>
+  <div id="my-content">
+    <div class="my-empty">👆 請先選擇你的姓名</div>
+  </div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-title">✅ 記帳成功！</div>
+    <div id="modal-receipt" class="modal-receipt"></div>
+    <button class="modal-ok" onclick="closeModal()">確定</button>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// 🔧 設定區 — 請在部署後修改這兩行
+// ═══════════════════════════════════════
+const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+const TOKEN = "office2024";
+
+// 10位成員（可修改名稱與emoji）
+const MEMBERS = [
+  { name: "小明", avatar: "👦" },
+  { name: "小華", avatar: "👧" },
+  { name: "小英", avatar: "🧑" },
+  { name: "阿偉", avatar: "👨" },
+  { name: "阿珍", avatar: "👩" },
+  { name: "大雄", avatar: "🧔" },
+  { name: "靜香", avatar: "👱‍♀️" },
+  { name: "技安", avatar: "💪" },
+  { name: "小夫", avatar: "🤓" },
+  { name: "叮噹", avatar: "🤖" },
+];
+
+// 固定品項
+let FIXED_ITEMS = ["便當", "飲料", "咖啡", "早餐", "零食", "麵食", "便利商店"];
+let customItems = [];
+
+// ── 狀態 ──
+let selectedPerson = null;
+let selectedItem = null;
+let cart = [];
+
+// ── 初始化 ──
+function init() {
+  renderPersons();
+  renderItems();
+  renderCart();
+
+  // 填充「我的欠款」選單
+  const sel = document.getElementById("my-select");
+  MEMBERS.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m.name;
+    opt.textContent = m.avatar + " " + m.name;
+    sel.appendChild(opt);
+  });
+}
+
+// ── Tab 切換 ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const tabs = ['add','overview','my'];
+  document.querySelectorAll('.tab-btn')[tabs.indexOf(tab)].classList.add('active');
+  document.getElementById('page-' + tab).classList.add('active');
+  if (tab === 'overview') loadOverview();
+}
+
+// ── 渲染成員 ──
+function renderPersons() {
+  const grid = document.getElementById("person-grid");
+  grid.innerHTML = "";
+  MEMBERS.forEach(m => {
+    const btn = document.createElement("button");
+    btn.className = "person-btn" + (selectedPerson === m.name ? " selected" : "");
+    btn.innerHTML = `<span class="avatar">${m.avatar}</span>${m.name}`;
+    btn.onclick = () => { selectedPerson = m.name; renderPersons(); };
+    grid.appendChild(btn);
+  });
+}
+
+// ── 渲染品項 ──
+function renderItems() {
+  const grid = document.getElementById("item-grid");
+  grid.innerHTML = "";
+  const allItems = [...FIXED_ITEMS, ...customItems];
+  allItems.forEach((item, idx) => {
+    const btn = document.createElement("button");
+    const isCustom = idx >= FIXED_ITEMS.length;
+    btn.className = "item-btn" + (isCustom ? " custom-item" : "") + (selectedItem === item ? " selected" : "");
+    btn.textContent = item;
+    btn.onclick = () => { selectedItem = item; renderItems(); };
+    grid.appendChild(btn);
+  });
+}
+
+// ── 新增自訂品項 ──
+function addCustomItem() {
+  const input = document.getElementById("custom-item-input");
+  const val = input.value.trim();
+  if (!val) return showToast("請輸入品項名稱");
+  if (FIXED_ITEMS.includes(val) || customItems.includes(val)) return showToast("品項已存在");
+  customItems.push(val);
+  selectedItem = val;
+  input.value = "";
+  renderItems();
+  showToast("已新增品項：" + val);
+}
+
+// ── 金額快速設定 ──
+function setAmt(v) {
+  document.getElementById("amount-input").value = v;
+}
+
+// ── 加入購物車 ──
+function addToCart() {
+  if (!selectedPerson) return showToast("⚠ 請先選擇購買人");
+  if (!selectedItem) return showToast("⚠ 請先選擇品項");
+  const amt = parseInt(document.getElementById("amount-input").value) || 0;
+  if (amt <= 0) return showToast("⚠ 請輸入有效金額");
+  const note = document.getElementById("note-input").value.trim();
+  cart.push({
+    person: selectedPerson,
+    item: selectedItem,
+    amount: amt,
+    note: note,
+    tid: "T" + Date.now() + Math.random().toString(36).slice(2,5)
+  });
+  renderCart();
+  document.getElementById("amount-input").value = "";
+  document.getElementById("note-input").value = "";
+  showToast(`✓ 已加入：${selectedPerson} / ${selectedItem} $${amt}`);
+}
+
+// ── 渲染購物車 ──
+function renderCart() {
+  const list = document.getElementById("cart-list");
+  const total = cart.reduce((s, c) => s + c.amount, 0);
+  document.getElementById("cart-total").textContent = "$" + total;
+  if (cart.length === 0) {
+    list.innerHTML = '<div class="cart-empty">購物車是空的，請先加入品項</div>';
+    return;
+  }
+  list.innerHTML = cart.map((c, i) => `
+    <div class="cart-item">
+      <div>
+        <div class="cart-item-name">${c.item}${c.note ? ' <span style="color:var(--muted);font-size:12px;">(${c.note})</span>' : ''}</div>
+        <div class="cart-item-person">${MEMBERS.find(m=>m.name===c.person)?.avatar || ''} ${c.person}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="cart-item-amt">$${c.amount}</span>
+        <button class="cart-item-del" onclick="removeFromCart(${i})">✕</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function removeFromCart(i) { cart.splice(i, 1); renderCart(); }
+function clearCart() { cart = []; renderCart(); showToast("購物車已清空"); }
+
+// ── 全部送出 ──
+async function submitAll() {
+  if (cart.length === 0) return showToast("⚠ 購物車是空的");
+  const btn = document.getElementById("submit-btn");
+  btn.disabled = true; btn.textContent = "⏳ 送出中…";
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "addBatch", token: TOKEN, items: cart })
+    });
+    const data = await res.json();
+    if (data.status === "success") {
+      showModal(cart);
+      cart = [];
+      renderCart();
+    } else {
+      showToast("❌ 失敗：" + (data.message || "未知錯誤"));
+    }
+  } catch(e) {
+    showToast("❌ 網路錯誤，請重試");
+  }
+  btn.disabled = false; btn.textContent = "✅ 全部送出記帳";
+}
+
+// ── 總覽載入 ──
+async function loadOverview() {
+  document.getElementById("overview-content").innerHTML = '<div class="loading"><div class="spinner"></div><br>載入中…</div>';
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=overview&token=${TOKEN}`);
+    const data = await res.json();
+    if (data.status !== "success") throw new Error(data.message);
+    renderOverview(data.members);
+  } catch(e) {
+    document.getElementById("overview-content").innerHTML = '<div class="loading">⚠ 載入失敗，請稍後重試</div>';
+  }
+}
+
+function renderOverview(members) {
+  const html = members.map(m => {
+    const rows = (m.records || []).map(r => `
+      <div class="overview-row">
+        <span class="overview-row-item">${r.item}${r.note ? ' ('+r.note+')' : ''} · ${r.date}</span>
+        <span class="overview-row-amt ${r.type==='settle'?'paid':''}">${r.type==='settle'?'-':''}$${Math.abs(r.amount)}</span>
+      </div>
+    `).join("");
+    const settled = m.balance <= 0;
+    return `
+      <div class="overview-card">
+        <div class="overview-card-header">
+          <span class="overview-name">${MEMBERS.find(mm=>mm.name===m.name)?.avatar||''} ${m.name}</span>
+          <span class="overview-total ${settled?'settled':''}">${settled ? '✓ 已結清' : '欠 $'+m.balance}</span>
+        </div>
+        <div class="overview-detail">
+          ${rows || '<div style="color:var(--muted);font-size:13px;padding:4px 0;">尚無記錄</div>'}
+          ${!settled ? `<button class="settle-btn" onclick="settle('${m.name}', ${m.balance})">💳 標記「${m.name}」已還款 $${m.balance}</button>` : `<button class="settle-btn unsettled" onclick="settle('${m.name}', ${m.balance})">↩ 重新開啟欠款</button>`}
+        </div>
+      </div>
+    `;
+  }).join("");
+  document.getElementById("overview-content").innerHTML = html || '<div class="loading">尚無任何記錄</div>';
+}
+
+// ── 結算 ──
+async function settle(name, balance) {
+  if (balance <= 0) {
+    if (!confirm(`確定要重新開啟 ${name} 的欠款？`)) return;
+  } else {
+    if (!confirm(`確定 ${name} 已還款 $${balance}？`)) return;
+  }
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "settle", token: TOKEN, name, balance })
+    });
+    const data = await res.json();
+    if (data.status === "success") { showToast("✓ 結算成功"); loadOverview(); }
+    else showToast("❌ " + data.message);
+  } catch(e) { showToast("❌ 網路錯誤"); }
+}
+
+// ── 我的欠款 ──
+async function loadMyData() {
+  const name = document.getElementById("my-select").value;
+  if (!name) { document.getElementById("my-content").innerHTML = '<div class="my-empty">👆 請先選擇你的姓名</div>'; return; }
+  document.getElementById("my-content").innerHTML = '<div class="loading"><div class="spinner"></div><br>載入中…</div>';
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=mydata&token=${TOKEN}&name=${encodeURIComponent(name)}`);
+    const data = await res.json();
+    if (data.status !== "success") throw new Error(data.message);
+    const m = data.member;
+    const settled = m.balance <= 0;
+    const rows = (m.records || []).map(r => `
+      <div class="my-history-row">
+        <div class="my-history-dot ${r.type==='settle'?'paid':''}"></div>
+        <div class="my-history-info">
+          <div class="my-history-item">${r.item}${r.note ? ' · '+r.note : ''}</div>
+          <div class="my-history-date">${r.date}</div>
+        </div>
+        <div class="my-history-amt ${r.type==='settle'?'paid':''}">${r.type==='settle'?'-':''}$${Math.abs(r.amount)}</div>
+      </div>
+    `).join("");
+    document.getElementById("my-content").innerHTML = `
+      <div class="my-summary">
+        <div class="my-name-disp">${MEMBERS.find(mm=>mm.name===name)?.avatar||''} ${name} 的帳務</div>
+        <div class="my-amt-disp ${settled?'settled':''}">$${m.balance}</div>
+        <div class="my-amt-label">${settled ? '✓ 已全部結清' : '目前欠款金額'}</div>
+      </div>
+      <div class="my-history">${rows || '<div class="my-empty">尚無記錄</div>'}</div>
+    `;
+  } catch(e) {
+    document.getElementById("my-content").innerHTML = '<div class="loading">⚠ 載入失敗</div>';
+  }
+}
+
+// ── Modal ──
+function showModal(cartSnap) {
+  const rows = cartSnap.map(c => `
+    <div class="modal-line">
+      <span class="modal-line-label">${c.person} · ${c.item}</span>
+      <span class="modal-line-val">$${c.amount}</span>
+    </div>
+  `).join("");
+  const total = cartSnap.reduce((s,c) => s+c.amount, 0);
+  document.getElementById("modal-receipt").innerHTML = rows + `<div class="modal-total">合計 $${total}</div>`;
+  document.getElementById("modal").classList.add("show");
+}
+function closeModal() { document.getElementById("modal").classList.remove("show"); }
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+init();
+
+// ── PWA Service Worker 註冊 ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW error:', err));
+  });
+}
+</script>
+</body>
+</html>
