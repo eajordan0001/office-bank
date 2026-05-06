@@ -1,85 +1,133 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>辦公室代買系統</title>
     <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e91e63">
     <style>
-        :root { --primary: #e91e63; --bg: #f5f5f5; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; width: 100%; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .log-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 10px 0; }
-        .negative { color: red; } .positive { color: green; }
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f5f5f5; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        h1 { color: #e91e63; }
+        .balance { font-size: 2em; font-weight: bold; margin: 20px 0; color: #333; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background: #e91e63; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:active { background: #ad1457; }
+        #logs { text-align: left; margin-top: 20px; font-size: 0.9em; }
+        .log-item { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
-    <h2>辦公室代買系統</h2>
 
-    <div class="card">
-        <h3>代買扣款</h3>
-        <select id="userSelect"><option value="YF001">小明 (YF001)</option></select>
-        <input type="text" id="itemName" placeholder="交易項目 (如：咖啡)">
+<div class="card">
+    <h1>You-Er 代買系統</h1>
+    <div id="login-section">
+        <input type="text" id="userId" placeholder="請輸入使用者 ID (如: YF001)">
+        <button onclick="login()">登入系統</button>
+    </div>
+
+    <div id="main-section" style="display:none;">
+        <p>歡迎，<span id="display-id"></span></p>
+        <div class="balance">餘額：$<span id="balance-value">--</span></div>
+        
         <input type="number" id="amount" placeholder="金額">
+        <input type="text" id="item" placeholder="品項 (如: 拿鐵)">
         <button onclick="handleTransaction('deduct')">確認扣款</button>
+        <button style="background:#4caf50;" onclick="handleTransaction('recharge')">儲值金額</button>
+        
+        <div id="logs">
+            <strong>最近紀錄：</strong>
+            <div id="log-list">載入中...</div>
+        </div>
     </div>
+</div>
 
-    <div class="card">
-        <h3>交易紀錄</h3>
-        <button style="background:#666;" onclick="loadLogs()">整理紀錄</button>
-        <div id="logList"></div>
-    </div>
+<script>
+    // --- 核心設定區區 (已嵌入您的 GAS 網址) ---
+    const CONFIG = {
+        apiUrl: "https://script.google.com/macros/s/AKfycbwWp8FVSNq7KEcnzvWoe48aTdW1c8Q32-QUeAhYwnunjbhKGNJR16ozsgU9C5YV0SnIfg/exec",
+        token: "YOUR_CUSTOM_TOKEN" // 請確保與 GAS 端的 ACCESS_TOKEN 一致
+    };
 
-    <script>
-        // 註冊 Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+    let currentUserId = "";
+
+    function login() {
+        const idInput = document.getElementById('userId').value.trim();
+        if (!idInput) return alert("請輸入 ID");
+        currentUserId = idInput;
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('main-section').style.display = 'block';
+        document.getElementById('display-id').innerText = currentUserId;
+        fetchData();
+    }
+
+    async function fetchData() {
+        const res = await fetch(CONFIG.apiUrl, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "getLogs",
+                userId: currentUserId,
+                token: CONFIG.token
+            })
+        });
+        const data = await responseToJson(res);
+        if (data.status === "success") {
+            updateUI(data);
         }
+    }
 
-        async function apiCall(data) {
-            const url = localStorage.getItem('gas_url');
-            const token = localStorage.getItem('access_token');
-            if (!url) return alert("請先在設定中配置 API URL");
+    async function handleTransaction(type) {
+        const amount = document.getElementById('amount').value;
+        const item = document.getElementById('item').value;
+        if (!amount || !item) return alert("請填寫金額與品項");
 
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify({ ...data, token: token })
-                });
-                return await response.json();
-            } catch (e) { alert("連線失敗"); return null; }
+        const res = await fetch(CONFIG.apiUrl, {
+            method: "POST",
+            body: JSON.stringify({
+                action: type,
+                userId: currentUserId,
+                amount: amount,
+                item: item,
+                token: CONFIG.token
+            })
+        });
+        const data = await responseToJson(res);
+        alert(data.message);
+        if (data.status === "success") {
+            fetchData();
+            document.getElementById('amount').value = '';
+            document.getElementById('item').value = '';
         }
+    }
 
-        async function handleTransaction(action) {
-            const data = {
-                action: action,
-                userId: document.getElementById('userSelect').value,
-                item: document.getElementById('itemName').value || "未命名項目",
-                amount: document.getElementById('amount').value
-            };
-            const res = await apiCall(data);
-            if (res && res.status === 'success') {
-                alert(res.message + "！新餘額：" + res.newBalance);
-                loadLogs();
-            }
-        }
+    async function responseToJson(res) {
+        return await res.json();
+    }
 
-        async function loadLogs() {
-            const res = await apiCall({ action: 'getLogs', userId: 'all' });
-            if (res && res.logs) {
-                const list = document.getElementById('logList');
-                list.innerHTML = res.logs.map(log => `
-                    <div class="log-item">
-                        <div><b>${log.item}</b><br><small>${log.date}</small></div>
-                        <div class="${log.type==='扣款'?'negative':'positive'}">
-                            ${log.type==='扣款'?'-':'+'}${log.amount}
-                        </div>
-                    </div>
-                `).join('');
-            }
+    function updateUI(data) {
+        if (data.logs && data.logs.length > 0) {
+            document.getElementById('balance-value').innerText = data.logs[0].balance;
+            let logHtml = '';
+            data.logs.forEach(log => {
+                logHtml += `<div class="log-item">
+                    <span>${log.date} ${log.item}</span>
+                    <span style="color:${log.type === '扣款' ? 'red' : 'green'}">${log.type}${log.amount}</span>
+                </div>`;
+            });
+            document.getElementById('log-list').innerHTML = logHtml;
+        } else {
+            document.getElementById('log-list').innerHTML = '尚無紀錄';
         }
-    </script>
+    }
+
+    // 註冊 PWA Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(() => console.log("Service Worker 註冊成功"))
+            .catch(err => console.log("Service Worker 註冊失敗", err));
+    }
+</script>
+
 </body>
 </html>
