@@ -1,4 +1,4 @@
-const CACHE_NAME = 'office-purchase-v4';
+const CACHE_NAME = 'office-purchase-v5';
 const assets = [
   './',
   './index.html',
