@@ -1,33 +1,40 @@
-# 工作流名稱
 name: Deploy Web App to GitHub Pages
 
-# 觸發時機：當 main 分支有 push 動作時
 on:
   push:
-    branches:
-      - main
+    # 重要：請確認你的主分支名稱是 main 還是 master
+    branches: ["main"]
 
-# 權限設定：允許寫入內容至 GitHub Pages
+# 必須完整宣告權限，否則部署會被拒絕
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# 確保同時只有一個部署任務在執行
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps: deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4 # 步驟 1: 下載您的程式碼
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4 # 步驟 2: 配置 GitHub Pages 環境
+        uses: actions/configure-pages@v4
 
-      - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v3 # 步驟 3: 打包並上傳所有檔案 (index.html, sw.js 等)
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
+          # 確保路徑為 '.' 代表根目錄
           path: '.'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 # 步驟 4: 正式發佈至網頁網址
+        uses: actions/deploy-pages@v4
