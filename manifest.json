@@ -1,25 +1,20 @@
 {
-  "name": "辦公室代買記帳系統",
-  "short_name": "代買記帳",
-  "description": "辦公室代買消費紀錄與結算工具",
-  "start_url": "./index.html",
+  "name": "辦公室代買系統",
+  "short_name": "代買系統",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#f5f0e8",
-  "theme_color": "#1a1a2e",
-  "orientation": "portrait",
-  "lang": "zh-TW",
+  "background_color": "#ffffff",
+  "theme_color": "#e91e63",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
