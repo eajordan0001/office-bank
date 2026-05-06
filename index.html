@@ -6,31 +6,35 @@
     <title>優兒代購系統</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        :root { --primary: #e91e63; --success: #4caf50; }
-        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f0f2f5; color: #333; }
+        :root { --primary: #e91e63; --success: #4caf50; --bg: #f0f2f5; }
+        body { font-family: sans-serif; margin: 0; padding: 15px; background: var(--bg); color: #333; }
         .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
-        h1 { color: var(--primary); margin-bottom: 20px; }
+        h1 { color: var(--primary); margin-bottom: 20px; font-size: 24px; }
         
-        /* 選單與輸入框 */
-        select, input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+        label { display: block; text-align: left; margin: 10px 0 5px; font-weight: bold; font-size: 14px; }
+        select, input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
         
-        /* 按鈕組規格 */
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+        /* 網格按鈕配置 */
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
         
         button { padding: 12px 5px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:active { opacity: 0.7; transform: scale(0.98); }
+        
         .btn-amt { background: #e3f2fd; color: #1976d2; }
         .btn-item { background: #f5f5f5; color: #616161; font-size: 14px; }
-        .btn-action { background: var(--primary); color: white; padding: 15px; font-size: 18px; grid-column: span 3; }
-        .btn-clear { background: #9e9e9e; color: white; }
+        .btn-clear { background: #9e9e9e; color: white; width: 100%; margin-bottom: 15px; }
+        
+        .btn-action { background: var(--primary); color: white; padding: 15px; font-size: 18px; width: 100%; margin-top: 10px; }
+        .btn-recharge { background: var(--success); color: white; padding: 15px; font-size: 18px; width: 100%; margin-top: 8px; }
         
         /* 交易狀態遮罩 */
         #loading-overlay { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.9); z-index: 100; flex-direction: column; 
+            background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; 
             justify-content: center; align-items: center; 
         }
-        .hourglass { font-size: 50px; animation: rotate 2s infinite; }
+        .hourglass { font-size: 60px; animation: rotate 2s infinite; margin-bottom: 15px; }
         @keyframes rotate { 0% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } 100% { transform: rotate(180deg); } }
     </style>
 </head>
@@ -38,20 +42,18 @@
 
 <div id="loading-overlay">
     <div class="hourglass">⏳</div>
-    <p>交易確認中...</p>
+    <p style="font-weight:bold; font-size:18px;">交易確認中...</p>
 </div>
 
 <div class="card">
     <h1>優兒代購 POS</h1>
     
-    <!-- 1. 選擇使用者 -->
-    <label>選擇帳戶：</label>
+    <label>1. 選擇帳戶</label>
     <select id="userSelect">
-        <option value="">載入名單中...</option>
+        <option value="">正在連線試算表...</option>
     </select>
 
-    <!-- 2. 金額設定 -->
-    <label>金額：</label>
+    <label>2. 設定金額 (可點選累加)</label>
     <input type="number" id="amount" placeholder="0" readonly>
     <div class="grid-4">
         <button class="btn-amt" onclick="addAmount(5)">+5</button>
@@ -61,8 +63,7 @@
     </div>
     <button class="btn-clear" onclick="clearAmount()">清除金額</button>
 
-    <!-- 3. 品項設定 (9宮格) -->
-    <label style="display:block; margin-top:15px;">品項：</label>
+    <label>3. 選擇品項</label>
     <input type="text" id="item" placeholder="手動輸入品項">
     <div class="grid-3">
         <button class="btn-item" onclick="setItem('咖啡')">咖啡</button>
@@ -74,20 +75,21 @@
         <button class="btn-item" onclick="setItem('厚片')">厚片</button>
         <button class="btn-item" onclick="setItem('蛋餅')">蛋餅</button>
         <button class="btn-item" onclick="setItem('零食')">零食</button>
-        
-        <!-- 4. 交易按鈕 -->
-        <button class="btn-action" onclick="processTransaction('deduct')">確認扣款</button>
-        <button class="btn-action" style="background:var(--success); margin-top:5px;" onclick="processTransaction('recharge')">儲值金額</button>
     </div>
+
+    <label>4. 確認交易</label>
+    <button class="btn-action" onclick="processTransaction('deduct')">確認扣款</button>
+    <button class="btn-recharge" onclick="processTransaction('recharge')">儲值金額</button>
 </div>
 
 <script>
     const CONFIG = {
+        // 確保這是你最新部署的 GAS 網址
         apiUrl: "https://script.google.com/macros/s/AKfycbwWp8FVSNq7KEcnzvWoe48aTdW1c8Q32-QUeAhYwnunjbhKGNJR16ozsgU9C5YV0SnIfg/exec",
         token: "YOUR_CUSTOM_TOKEN" 
     };
 
-    // 頁面初始化：抓取名單
+    // 初始化：抓取試算表名單
     window.onload = async () => {
         try {
             const res = await fetch(CONFIG.apiUrl, {
@@ -96,35 +98,43 @@
             });
             const data = await res.json();
             const select = document.getElementById('userSelect');
-            select.innerHTML = '<option value="">-- 請選擇人員 --</option>';
-            data.users.forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u.id;
-                opt.text = `${u.name} (餘額:${u.balance})`;
-                select.appendChild(opt);
-            });
-        } catch (e) { alert("無法載入名單，請檢查後端設定"); }
+            if (data.status === "success") {
+                select.innerHTML = '<option value="">-- 請選擇人員 --</option>';
+                data.users.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.id;
+                    opt.text = `${u.name} (餘額:${u.balance})`;
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option value="">讀取失敗，請檢查 Token</option>';
+            }
+        } catch (e) {
+            document.getElementById('userSelect').innerHTML = '<option value="">網路連線錯誤</option>';
+        }
     };
 
-    // 金額處理
+    // 金額加總邏輯
     function addAmount(val) {
         const input = document.getElementById('amount');
         input.value = Number(input.value) + val;
     }
     function clearAmount() { document.getElementById('amount').value = ''; }
 
-    // 品項處理
+    // 品項選取邏輯
     function setItem(name) { document.getElementById('item').value = name; }
 
-    // 交易處理
+    // 傳送交易
     async function processTransaction(type) {
         const userId = document.getElementById('userSelect').value;
         const amount = document.getElementById('amount').value;
         const item = document.getElementById('item').value;
 
-        if (!userId || !amount || !item) return alert("請填寫完整資訊！");
+        if (!userId || !amount || !item) {
+            return alert("請填寫完整資訊：選擇帳戶、金額及品項！");
+        }
 
-        // 顯示載入畫面
+        // 顯示漏斗遮罩
         document.getElementById('loading-overlay').style.display = 'flex';
 
         try {
@@ -140,13 +150,24 @@
             });
             const result = await res.json();
             alert(result.message);
-            location.reload(); // 交易完成後重新整理更新餘額
+            // 交易成功後自動重新整理以更新餘額
+            if (result.status === "success") {
+                location.reload();
+            }
         } catch (e) {
-            alert("交易失敗，請檢查網路");
+            alert("系統繁忙或網路錯誤，請稍後再試");
         } finally {
+            // 關閉遮罩
             document.getElementById('loading-overlay').style.display = 'none';
         }
     }
+
+    // PWA Service Worker 註冊
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(() => console.log("SW registered"));
+    }
 </script>
+
 </body>
 </html>
