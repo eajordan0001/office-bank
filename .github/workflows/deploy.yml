@@ -2,16 +2,15 @@ name: Deploy Web App to GitHub Pages
 
 on:
   push:
-    # 重要：請確認你的主分支名稱是 main 還是 master
-    branches: ["main"]
+    branches: ["main"] # 確保與你的分支名稱一致
 
-# 必須完整宣告權限，否則部署會被拒絕
+# 必要的權限設定，缺少這些會導致部署失敗
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 確保同時只有一個部署任務在執行
+# 避免多個部署任務同時衝突
 concurrency:
   group: "pages"
   cancel-in-progress: true
@@ -20,19 +19,19 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps: deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # 確保路徑為 '.' 代表根目錄
+          # 重要：這代表上傳根目錄的所有檔案
           path: '.'
 
       - name: Deploy to GitHub Pages
