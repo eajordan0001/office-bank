@@ -1,6 +1,6 @@
 {
-  "name": "辦公室代買系統",
-  "short_name": "代買系統",
+  "name": "優兒代購系統",
+  "short_name": "代購系統",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
